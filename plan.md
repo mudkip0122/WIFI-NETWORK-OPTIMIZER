@@ -204,6 +204,8 @@ Wi-Fi Optimization Recommendation
 
 #### 2주차 - Wi-Fi 기본 정보 수집 기능 개발
 
+구현 및 검증 기록: [2주차 진행 현황](docs/week02-status.md).
+
 **목표**
 
 현재 연결된 Wi-Fi의 기본 정보를 가져오는 기능을 구현한다.
@@ -236,6 +238,8 @@ Band       : 5 GHz
 
 #### 3주차 - 네트워크 품질 측정 기능 개발
 
+구현 및 검증 기록: [3주차 진행 현황](docs/week03-status.md).
+
 **목표**
 
 Wi-Fi 신호뿐만 아니라 실제 네트워크 품질을 측정한다.
@@ -265,6 +269,8 @@ Band
 ```
 
 #### 4주차 - Wi-Fi Collector 통합
+
+구현 및 검증 기록: [4주차 진행 현황](docs/week04-status.md).
 
 **목표**
 

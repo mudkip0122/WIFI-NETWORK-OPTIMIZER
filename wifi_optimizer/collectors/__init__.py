@@ -1,1 +1,1 @@
-"""Windows network measurement collectors. Planned; not implemented yet."""
+"""Windows Wi-Fi information and signal collectors."""
