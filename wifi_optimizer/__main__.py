@@ -24,9 +24,50 @@ def main() -> int:
     parser.add_argument("--monitor", action="store_true", help="Periodically collect Wi-Fi and Ping")
     parser.add_argument("--interval", type=float, default=5, help="Seconds to wait after each cycle")
     parser.add_argument("--samples", type=int, help="Stop monitor after this many cycles")
+    parser.add_argument("--db", help="SQLite file for monitor storage or history")
+    parser.add_argument("--history", action="store_true", help="Read saved measurements")
+    parser.add_argument("--record-id", type=int, help="Read one full record with --history")
+    parser.add_argument("--limit", type=int, default=100, help="History limit (1..500)")
+    parser.add_argument("--from", dest="from_time", help="Inclusive ISO timestamp with timezone")
+    parser.add_argument("--to", dest="to_time", help="Exclusive ISO timestamp with timezone")
+    parser.add_argument("--ap-id", type=int, help="History AP ID")
+    parser.add_argument("--bssid", help="History BSSID")
+    parser.add_argument("--location-id", type=int, help="History location ID")
+    parser.add_argument("--session-id", help="History session UUID")
+    parser.add_argument("--data-kind", choices=['real', 'example', 'all'], default='real')
     args = parser.parse_args()
-    if sum((args.monitor, args.measure, args.wifi, args.check)) > 1:
-        parser.error("Choose only one of --monitor, --measure, --wifi, --check")
+    if sum((args.monitor, args.measure, args.wifi, args.check, args.history)) > 1:
+        parser.error("Choose only one of --monitor, --measure, --wifi, --check, --history")
+    if args.history:
+        from .storage import DEFAULT_DB_PATH, MeasurementStore, SchemaVersionError
+        if args.speed:
+            parser.error('--speed requires --measure')
+        if args.record_id is not None and any(v is not None for v in (
+            args.from_time, args.to_time, args.ap_id, args.bssid, args.location_id, args.session_id
+        )):
+            parser.error('--record-id cannot be combined with history filters')
+        try:
+            with MeasurementStore(args.db or DEFAULT_DB_PATH, readonly=True) as store:
+                if args.record_id is not None:
+                    result = store.get_measurement(args.record_id)
+                    if result is None:
+                        print('Record not found', file=sys.stderr)
+                        return 1
+                else:
+                    result = store.list_measurements(
+                        limit=args.limit, from_time=args.from_time, to_time=args.to_time,
+                        ap_id=args.ap_id, bssid=args.bssid, location_id=args.location_id,
+                        session_id=args.session_id,
+                        data_kind=None if args.data_kind == 'all' else args.data_kind,
+                    )
+        except (OSError, sqlite3.Error, SchemaVersionError, ValueError) as exc:
+            print(f'History query failed: {exc}', file=sys.stderr)
+            return 2
+        print(json.dumps(result, ensure_ascii=True, indent=2))
+        return 0
+    if any(v is not None for v in (args.record_id, args.from_time, args.to_time, args.ap_id,
+                                   args.bssid, args.location_id, args.session_id)):
+        parser.error('History filters require --history')
     if args.monitor:
         import queue
         from .collector import CollectorConfig, WiFiCollector
@@ -38,7 +79,7 @@ def main() -> int:
                 raise ValueError("--samples must be positive")
         except ValueError as exc:
             parser.error(str(exc))
-        collector = WiFiCollector(config)
+        collector = WiFiCollector(config, **({"db_path": args.db} if args.db else {}))
         try:
             collector.start(max_samples=args.samples)
             while collector.running or not collector.results.empty():
@@ -50,7 +91,12 @@ def main() -> int:
             print("Stopping after the active measurement stage...", file=sys.stderr)
         finally:
             collector.close(timeout=None)
-        return 0
+        if collector.storage_failures:
+            print(f"DB storage failures: {collector.storage_failures}; "
+                  f"last error: {collector.storage_error}", file=sys.stderr)
+        return 2 if collector.storage_failures else 0
+    if args.db:
+        parser.error("--db requires --monitor or --history")
     if args.speed and not args.measure:
         parser.error("--speed requires --measure")
     if args.measure:

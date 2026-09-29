@@ -57,5 +57,7 @@ def measure_quality(interface=None, target="1.1.1.1", count=4, include_speed=Fal
     except (WifiMeasurementError, OSError, ValueError, subprocess.TimeoutExpired) as exc:
         result["status"] = "partial" if result["wifi"] else "error"
         result["error"] = str(exc)
+        if isinstance(exc, WifiMeasurementError):
+            result["error_code"] = exc.code
     result["finished_at"] = datetime.now(timezone.utc).isoformat()
     return result

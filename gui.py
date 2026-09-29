@@ -28,6 +28,7 @@ class WifiMonitorApp:
         self.status = tk.StringVar(value="측정 대기")
         self.connection = tk.StringVar(value="연결 정보 대기")
         self.quality = tk.StringVar(value="Ping / 손실 측정 대기")
+        self.storage_status = tk.StringVar(value="측정 결과는 로컬 DB에 자동 저장됩니다.")
         settings = ttk.Frame(root, padding=10)
         settings.pack()
         self.entries = []
@@ -48,6 +49,7 @@ class WifiMonitorApp:
         for button in (self.start_btn, self.stop_btn, self.speed_btn):
             button.pack(side="left", padx=5)
         ttk.Label(root, textvariable=self.status, wraplength=920).pack(pady=5)
+        ttk.Label(root, textvariable=self.storage_status, wraplength=920).pack()
         ttk.Label(root, textvariable=self.connection, justify="left", wraplength=920).pack()
         plt.rc("font", family="Malgun Gothic")
         plt.rcParams["axes.unicode_minus"] = False
@@ -65,6 +67,7 @@ class WifiMonitorApp:
         footer = ttk.Frame(root, padding=8)
         footer.pack()
         for label, callback in [("최근 결과 JSON 저장", self.save_quality),
+                                ("저장 기록 조회", self.show_history),
                                 ("신호 요약 저장", self.save_report), ("신호 추세", self.analyze_trend)]:
             ttk.Button(footer, text=label, command=callback).pack(side="left", padx=5)
         root.protocol("WM_DELETE_WINDOW", self.close)
@@ -78,9 +81,13 @@ class WifiMonitorApp:
         try:
             config = CollectorConfig(self.interface.get().strip() or None, self.target.get().strip(),
                                      4, float(self.interval.get()))
-            if self.collector:
-                self.collector.close()
-            self.collector = WiFiCollector(config)
+            if self.collector and (self.collector.config != config or self.collector.closing):
+                if not self.collector.close():
+                    self.status.set("이전 세션 저장 마무리 중 · 잠시 후 다시 시작해 주세요.")
+                    return
+                self.collector = None
+            if self.collector is None:
+                self.collector = WiFiCollector(config)
             self.collector.start()
         except (ValueError, OSError) as exc:
             self.status.set(f"시작 실패: {exc}")
@@ -113,6 +120,11 @@ class WifiMonitorApp:
 
     def show_result(self, result):
         self.last_quality = result
+        storage = result.get("storage", {})
+        if storage.get("status") == "saved":
+            self.storage_status.set(f"DB 저장 완료 · 기록 #{storage['measurement_id']}")
+        else:
+            self.storage_status.set(f"DB 저장 실패 · {storage.get('error', '저장 상태 확인 불가')}")
         self.status.set(f"#{result['sequence']} · {result['status']} · "
                         f"소요 {result['duration_seconds']:.1f}초 · 완료 {datetime.datetime.now():%H:%M:%S}")
         wifi = result.get("wifi")
@@ -166,6 +178,10 @@ class WifiMonitorApp:
                     self.show_result(self.collector.results.get_nowait())
                 except queue.Empty:
                     break
+            if self.collector.storage_failures:
+                self.storage_status.set(
+                    f"DB 저장 오류 누적 {self.collector.storage_failures}회 · 일부 기록이 저장되지 않았을 수 있습니다. "
+                    f"{self.collector.storage_error}")
             if not self.collector.running:
                 self.start_btn.config(state="normal")
                 self.stop_btn.config(state="disabled")
@@ -178,7 +194,11 @@ class WifiMonitorApp:
                 self.status.set("중지 요청됨 · 진행 중인 단계 종료 대기")
         if self.closing and (not self.collector or not self.collector.running):
             if self.collector:
-                self.collector.close()
+                if not self.collector.close():
+                    self.timer = self.root.after(200, self.poll)
+                    return
+                if self.collector.storage_failures:
+                    messagebox.showwarning("DB 저장 오류", self.storage_status.get())
             plt.close(self.fig)
             self.root.destroy()
             return
@@ -193,6 +213,16 @@ class WifiMonitorApp:
             messagebox.showinfo("저장 불가", "완료된 측정이 없습니다.")
             return
         self.save_text(json.dumps(self.last_quality, ensure_ascii=False, indent=2), ".json")
+
+    def show_history(self):
+        from wifi_optimizer.visualization.history import HistoryWindow
+        from wifi_optimizer.storage import DEFAULT_DB_PATH
+        existing = getattr(self, 'history_window', None)
+        if existing is not None and existing.window.winfo_exists():
+            existing.window.lift()
+            return
+        self.history_window = HistoryWindow(
+            self.root, self.collector.db_path if self.collector else DEFAULT_DB_PATH)
 
     def save_text(self, text, extension):
         path = filedialog.asksaveasfilename(defaultextension=extension)

@@ -4,10 +4,16 @@ Windows에서 Wi-Fi 측정 데이터를 수집·저장하고 공간별 품질과
 
 GitHub 저장소: [mudkip0122/WIFI-NETWORK-OPTIMIZER](https://github.com/mudkip0122/WIFI-NETWORK-OPTIMIZER)
 
-현재 단계: **4주차 Wi-Fi Collector 및 자동 측정 통합·검증 완료**. 현재 연결된 무선 인터페이스의
+현재 단계: **5주차 SQLite 자동 저장·기록 조회 구현 및 검증 완료**. 현재 연결된 무선 인터페이스의
 SSID·BSSID·신호 %·RSSI·채널·대역을 수집하며 기존 Visualizer에도 표시합니다.
 게이트웨이·외부 Ping, 패킷 손실, 수동 다운로드/업로드 측정을 지원합니다.
-주기적 자동 측정·시작/중지·실행 로그를 지원합니다. DB·Heatmap은 이후 주차에 구현합니다.
+주기적 자동 측정·시작/중지·실행 로그를 지원합니다. Heatmap은 이후 주차에 구현합니다.
+5주차는 [SQLite 저장 구조 v1](docs/database-design.md)의 테이블 생성·저장 API와 Collector 자동 저장을 구현했습니다.
+GUI 자동 측정 및 `--monitor` 결과는 `data/wifi_optimizer.sqlite3`에 저장됩니다.
+저장 기록은 GUI의 **저장 기록 조회** 또는 CLI `--history`에서 확인합니다.
+사용법은 [5주차 진행 현황](docs/week05-status.md)에 있습니다.
+자동 테스트 51개와 정상 연결 실측 저장·재조회를 검증했으며, 사용자가 실제 GUI 기록 조회 동작을 확인했습니다.
+다음 작업은 6주차 Dashboard 정리·확장이며 아직 시작하지 않았습니다.
 
 ```powershell
 .\.venv\Scripts\python.exe -m wifi_optimizer --wifi
@@ -16,6 +22,9 @@ SSID·BSSID·신호 %·RSSI·채널·대역을 수집하며 기존 Visualizer에
 .\.venv\Scripts\python.exe -m wifi_optimizer --measure
 .\.venv\Scripts\python.exe -m wifi_optimizer --measure --speed
 .\.venv\Scripts\python.exe -m wifi_optimizer --monitor --interval 5 --samples 3
+.\.venv\Scripts\python.exe -m wifi_optimizer --monitor --samples 3 --db data/custom.sqlite3
+.\.venv\Scripts\python.exe -m wifi_optimizer --history --limit 20
+.\.venv\Scripts\python.exe -m wifi_optimizer --history --record-id 1
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
@@ -57,6 +66,7 @@ VS Code에서 이 폴더를 열고 Python 인터프리터로 `.venv\Scripts\pyth
 - [16주 계획](plan.md)
 - [요구사항 및 완료 기준](docs/requirements.md)
 - [시스템 구조 및 데이터 설계](docs/architecture.md)
+- [SQLite 저장 구조 v1 — 5주차 설계](docs/database-design.md)
 - [품질 평가 요소 조사](docs/quality-research.md)
 - [기존 코드 검토 상태](docs/legacy-review.md)
 - [개발 환경 및 GitHub 설정](docs/development.md)
@@ -64,6 +74,7 @@ VS Code에서 이 폴더를 열고 Python 인터프리터로 `.venv\Scripts\pyth
 - [2주차 구현 및 검증](docs/week02-status.md)
 - [3주차 구현 및 검증](docs/week03-status.md)
 - [4주차 구현 및 검증](docs/week04-status.md)
+- [5주차 테이블 생성 및 저장 API](docs/week05-status.md)
 
 ## 폴더 구조
 
