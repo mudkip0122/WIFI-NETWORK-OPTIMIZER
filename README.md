@@ -4,7 +4,7 @@ Windows에서 Wi-Fi 측정 데이터를 수집·저장하고 공간별 품질과
 
 GitHub 저장소: [mudkip0122/WIFI-NETWORK-OPTIMIZER](https://github.com/mudkip0122/WIFI-NETWORK-OPTIMIZER)
 
-현재 단계: **5주차 SQLite 자동 저장·기록 조회 구현 및 검증 완료**. 현재 연결된 무선 인터페이스의
+현재 단계: **6주차 실시간 Wi-Fi Dashboard 구현 및 자동 검증 완료**. 현재 연결된 무선 인터페이스의
 SSID·BSSID·신호 %·RSSI·채널·대역을 수집하며 기존 Visualizer에도 표시합니다.
 게이트웨이·외부 Ping, 패킷 손실, 수동 다운로드/업로드 측정을 지원합니다.
 주기적 자동 측정·시작/중지·실행 로그를 지원합니다. Heatmap은 이후 주차에 구현합니다.
@@ -13,7 +13,10 @@ GUI 자동 측정 및 `--monitor` 결과는 `data/wifi_optimizer.sqlite3`에 저
 저장 기록은 GUI의 **저장 기록 조회** 또는 CLI `--history`에서 확인합니다.
 사용법은 [5주차 진행 현황](docs/week05-status.md)에 있습니다.
 자동 테스트 51개와 정상 연결 실측 저장·재조회를 검증했으며, 사용자가 실제 GUI 기록 조회 동작을 확인했습니다.
-다음 작업은 6주차 Dashboard 정리·확장이며 아직 시작하지 않았습니다.
+6주차 Dashboard는 연결 정보·RSSI·신호·채널·대역·게이트웨이/외부 Ping과 손실·다운로드/업로드를
+항목별로 표시하고 각 측정 완료 시 갱신합니다. 실패·미측정 값은 이전 값으로 대체하지 않습니다.
+전체 자동 테스트 55개가 통과했습니다. [6주차 진행 현황](docs/week06-status.md)에 사용법과 검증 범위를 기록했습니다.
+다음 작업은 7주차 실시간 그래프 확장입니다.
 
 ```powershell
 .\.venv\Scripts\python.exe -m wifi_optimizer --wifi
@@ -75,6 +78,7 @@ VS Code에서 이 폴더를 열고 Python 인터프리터로 `.venv\Scripts\pyth
 - [3주차 구현 및 검증](docs/week03-status.md)
 - [4주차 구현 및 검증](docs/week04-status.md)
 - [5주차 테이블 생성 및 저장 API](docs/week05-status.md)
+- [6주차 실시간 Wi-Fi Dashboard](docs/week06-status.md)
 
 ## 폴더 구조
 

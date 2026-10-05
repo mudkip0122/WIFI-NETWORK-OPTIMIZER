@@ -10,13 +10,15 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 from wifi_optimizer.collector import CollectorConfig, WiFiCollector
+from wifi_optimizer.visualization.dashboard import Dashboard
 
 
 class WifiMonitorApp:
     def __init__(self, root, auto_start=True):
         self.root = root
         root.title("Wi-Fi 품질 모니터링")
-        root.geometry("950x820")
+        root.geometry("1000x960")
+        root.minsize(950, 880)
         self.collector = None
         self.closing = self.stopping = False
         self.last_quality = self.connection_key = None
@@ -50,7 +52,8 @@ class WifiMonitorApp:
             button.pack(side="left", padx=5)
         ttk.Label(root, textvariable=self.status, wraplength=920).pack(pady=5)
         ttk.Label(root, textvariable=self.storage_status, wraplength=920).pack()
-        ttk.Label(root, textvariable=self.connection, justify="left", wraplength=920).pack()
+        self.dashboard = Dashboard(root)
+        self.dashboard.pack(fill="x", padx=10, pady=6)
         plt.rc("font", family="Malgun Gothic")
         plt.rcParams["axes.unicode_minus"] = False
         self.fig, self.ax = plt.subplots(figsize=(9, 3.2))
@@ -120,13 +123,14 @@ class WifiMonitorApp:
 
     def show_result(self, result):
         self.last_quality = result
+        self.dashboard.show_result(result)
         storage = result.get("storage", {})
         if storage.get("status") == "saved":
             self.storage_status.set(f"DB 저장 완료 · 기록 #{storage['measurement_id']}")
         else:
             self.storage_status.set(f"DB 저장 실패 · {storage.get('error', '저장 상태 확인 불가')}")
         self.status.set(f"#{result['sequence']} · {result['status']} · "
-                        f"소요 {result['duration_seconds']:.1f}초 · 완료 {datetime.datetime.now():%H:%M:%S}")
+                        f"소요 {result['duration_seconds']:.1f}초")
         wifi = result.get("wifi")
         if wifi:
             key = (wifi["interface"], wifi["bssid"], wifi["ssid"], wifi["band"])
