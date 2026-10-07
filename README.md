@@ -4,7 +4,7 @@ Windows에서 Wi-Fi 측정 데이터를 수집·저장하고 공간별 품질과
 
 GitHub 저장소: [mudkip0122/WIFI-NETWORK-OPTIMIZER](https://github.com/mudkip0122/WIFI-NETWORK-OPTIMIZER)
 
-현재 단계: **6주차 실시간 Wi-Fi Dashboard 구현 및 자동 검증 완료**. 현재 연결된 무선 인터페이스의
+현재 단계: **8주차 품질 점수·등급 구현 및 자동 검증 완료**. 현재 연결된 무선 인터페이스의
 SSID·BSSID·신호 %·RSSI·채널·대역을 수집하며 기존 Visualizer에도 표시합니다.
 게이트웨이·외부 Ping, 패킷 손실, 수동 다운로드/업로드 측정을 지원합니다.
 주기적 자동 측정·시작/중지·실행 로그를 지원합니다. Heatmap은 이후 주차에 구현합니다.
@@ -16,7 +16,16 @@ GUI 자동 측정 및 `--monitor` 결과는 `data/wifi_optimizer.sqlite3`에 저
 6주차 Dashboard는 연결 정보·RSSI·신호·채널·대역·게이트웨이/외부 Ping과 손실·다운로드/업로드를
 항목별로 표시하고 각 측정 완료 시 갱신합니다. 실패·미측정 값은 이전 값으로 대체하지 않습니다.
 전체 자동 테스트 55개가 통과했습니다. [6주차 진행 현황](docs/week06-status.md)에 사용법과 검증 범위를 기록했습니다.
-다음 작업은 7주차 실시간 그래프 확장입니다.
+7주차는 **실시간 그래프** 선택 상자에서 RSSI·신호·Ping·손실·다운로드/업로드 속도를
+확인합니다. 최근 100개 측정 결과를 자동 갱신하며 실패·미측정 구간은 선을 끊어 표시합니다.
+전체 자동 테스트 58개가 통과했습니다. 실제 네트워크 및 화면 육안 검증은 남아 있습니다.
+[7주차 진행 현황](docs/week07-status.md)에 사용법과 검증 범위를 기록했습니다.
+8주차는 Dashboard에 종합 품질 점수·5단계 등급·지표별 점수·제외 지표를 표시합니다.
+미측정 속도는 제외하고 측정된 지표의 가중치를 재정규화합니다. 측정 JSON과 DB 원본에도
+`quality` 평가가 포함됩니다. [8주차 진행 현황](docs/week08-status.md)에 기준과 한계를 기록했습니다.
+다음 개발 작업은 9주차 공간별 측정 기능입니다.
+
+GUI 실행: `.\.venv\Scripts\python.exe gui.py`
 
 ```powershell
 .\.venv\Scripts\python.exe -m wifi_optimizer --wifi
@@ -79,6 +88,7 @@ VS Code에서 이 폴더를 열고 Python 인터프리터로 `.venv\Scripts\pyth
 - [4주차 구현 및 검증](docs/week04-status.md)
 - [5주차 테이블 생성 및 저장 API](docs/week05-status.md)
 - [6주차 실시간 Wi-Fi Dashboard](docs/week06-status.md)
+- [7주차 실시간 그래프](docs/week07-status.md)
 
 ## 폴더 구조
 

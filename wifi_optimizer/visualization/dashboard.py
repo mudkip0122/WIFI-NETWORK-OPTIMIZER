@@ -1,6 +1,7 @@
 """Current-cycle dashboard. Missing readings never reuse earlier values."""
 import datetime
 from tkinter import ttk, StringVar
+from ..analysis.quality import evaluate_quality
 
 
 FIELDS = (
@@ -44,7 +45,7 @@ class Dashboard(ttk.LabelFrame):
         self.updated = StringVar(master=self, value='완료된 측정 대기')
         ttk.Label(self, textvariable=self.updated).grid(row=0, column=0, columnspan=3, sticky='w')
         for index, (key, title) in enumerate(FIELDS):
-            frame = ttk.Frame(self, padding=5)
+            frame = ttk.Frame(self, padding=4)
             frame.grid(row=index // 3 + 1, column=index % 3, sticky='nsew', padx=3, pady=2)
             ttk.Label(frame, text=title).pack(anchor='w')
             variable = StringVar(master=self, value='측정 대기')
@@ -53,8 +54,19 @@ class Dashboard(ttk.LabelFrame):
                       wraplength=280).pack(anchor='w')
         for col in range(3):
             self.columnconfigure(col, weight=1, uniform='metric')
+        self.quality = StringVar(master=self, value='품질 평가 대기')
+        ttk.Label(self, textvariable=self.quality, wraplength=920).grid(
+            row=6, column=0, columnspan=3, sticky='w', pady=(4, 0))
 
     def show_result(self, result):
+        quality = evaluate_quality(result)
+        score = quality['score']
+        summary = '평가 불가' if score is None else f"{score:.1f}/100 · {quality['grade']}"
+        names = dict(FIELDS)
+        used = ', '.join(f"{names[key]} {quality['scores'][key]:.0f}" for key in quality['used']) or '없음'
+        missing = ', '.join(names[key] for key in quality['missing']) or '없음'
+        self.quality.set(f"품질: {summary} · 평가 범위 {quality['coverage_percent']}% · 기준 week08-v1\n"
+                         f"지표별 점수: {used}\n제외 지표: {missing} · 속도 목표 ↓100 / ↑20 Mbps")
         for key, value in readings(result).items():
             self.values[key].set(value)
         stamp = result.get('finished_at')

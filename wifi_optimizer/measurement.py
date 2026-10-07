@@ -8,9 +8,16 @@ from .collectors.signal import WifiMeasurementError
 from .collectors.network import interface_network
 from .collectors.ping import measure_ping
 from .collectors.speed import measure_speed
+from .analysis.quality import evaluate_quality
 
 
 def measure_quality(interface=None, target="1.1.1.1", count=4, include_speed=False, *, stop_event=None):
+    result = _measure_quality(interface, target, count, include_speed, stop_event=stop_event)
+    result['quality'] = evaluate_quality(result)
+    return result
+
+
+def _measure_quality(interface=None, target="1.1.1.1", count=4, include_speed=False, *, stop_event=None):
     target = str(ipaddress.IPv4Address(target))
     if not 1 <= count <= 20:
         raise ValueError("Ping count must be 1..20")

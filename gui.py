@@ -7,10 +7,10 @@ from collections import deque
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 from wifi_optimizer.collector import CollectorConfig, WiFiCollector
 from wifi_optimizer.visualization.dashboard import Dashboard
+from wifi_optimizer.visualization.graphs import RealTimeGraphs
 
 
 class WifiMonitorApp:
@@ -56,15 +56,9 @@ class WifiMonitorApp:
         self.dashboard.pack(fill="x", padx=10, pady=6)
         plt.rc("font", family="Malgun Gothic")
         plt.rcParams["axes.unicode_minus"] = False
-        self.fig, self.ax = plt.subplots(figsize=(9, 3.2))
-        self.line, = self.ax.plot([], [], "b-o", markersize=4)
-        self.ax.set(title="Wi-Fi 신호 강도", xlabel="실행 후 시간 (초)",
-                    ylabel="신호 (%)", ylim=(-5, 105))
-        self.ax.grid(True, alpha=0.25)
-        self.fig.tight_layout()
-        self.canvas = FigureCanvasTkAgg(self.fig, master=root)
-        self.canvas.get_tk_widget().pack(fill="both", expand=True)
-        self.canvas.draw()
+        self.graphs = RealTimeGraphs(root)
+        self.graphs.pack(fill="both", expand=True)
+        self.fig = self.graphs.fig
         ttk.Label(root, textvariable=self.quality, justify="left", wraplength=920).pack(pady=8)
         ttk.Label(root, text="속도는 단일 HTTPS 처리량 · 중지 시 진행 중인 단계의 종료를 기다립니다.").pack()
         footer = ttk.Frame(root, padding=8)
@@ -89,6 +83,11 @@ class WifiMonitorApp:
                     self.status.set("이전 세션 저장 마무리 중 · 잠시 후 다시 시작해 주세요.")
                     return
                 self.collector = None
+                self.graphs.history.clear()
+                self.x_data.clear()
+                self.y_data.clear()
+                self.connection_key = None
+                self.graphs.draw()
             if self.collector is None:
                 self.collector = WiFiCollector(config)
             self.collector.start()
@@ -131,6 +130,7 @@ class WifiMonitorApp:
             self.storage_status.set(f"DB 저장 실패 · {storage.get('error', '저장 상태 확인 불가')}")
         self.status.set(f"#{result['sequence']} · {result['status']} · "
                         f"소요 {result['duration_seconds']:.1f}초")
+        self.graphs.show_result(result, time.monotonic() - self.started_at)
         wifi = result.get("wifi")
         if wifi:
             key = (wifi["interface"], wifi["bssid"], wifi["ssid"], wifi["band"])
@@ -138,7 +138,6 @@ class WifiMonitorApp:
                 self.x_data.clear()
                 self.y_data.clear()
                 self.connection_key = key
-                self.line.set_data([], [])
             source = "드라이버 실측" if wifi["rssi_source"] == "native_wifi" else "추정/미확인"
             self.connection.set(
                 f"{wifi['interface']} | SSID: {wifi['ssid']} | BSSID: {wifi['bssid']}\n"
@@ -148,10 +147,6 @@ class WifiMonitorApp:
             if wifi["signal_percent"] is not None:
                 self.x_data.append(time.monotonic() - self.started_at)
                 self.y_data.append(wifi["signal_percent"])
-                self.line.set_data(self.x_data, self.y_data)
-                self.ax.set_xlim(max(0, self.x_data[0] - 1),
-                                 max(self.x_data[-1] + 1, self.x_data[0] + 25))
-            self.canvas.draw_idle()
         else:
             self.connection.set("현재 연결 정보 확인 불가 · 그래프는 이전 측정 기록")
         lines = []

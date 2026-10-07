@@ -58,4 +58,5 @@ class DashboardTests(unittest.TestCase):
         root.update_idletasks()
         self.assertEqual(app.dashboard.values['ssid'].get(), '측정 불가')
         self.assertIn('DB 저장 완료', app.storage_status.get())
+        self.assertEqual(len(app.graphs.history.rows), 1)
         self.assertLessEqual(root.winfo_reqheight(), 960)
