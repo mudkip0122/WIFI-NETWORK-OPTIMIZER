@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900">
+  <rect width="900" height="900" fill="#f7f9fc"/>
+  <g font-family="Malgun Gothic, sans-serif" fill="#213047">
+    <text x="450" y="58" text-anchor="middle" font-size="28" font-weight="bold">방 평면도 · 3.6 × 3.6 m</text>
+    <text x="450" y="90" text-anchor="middle" font-size="16" fill="#617087">3600 mm × 3600 mm · 문·창문·가구 위치 미반영</text>
+    <rect x="150" y="170" width="600" height="600" fill="white"/>
+    <path d="M250 170V770 M350 170V770 M450 170V770 M550 170V770 M650 170V770 M150 270H750 M150 370H750 M150 470H750 M150 570H750 M150 670H750" stroke="#cdd9e7" stroke-width="1.5" stroke-dasharray="5 5"/>
+    <rect x="150" y="170" width="600" height="600" fill="none" stroke="#213047" stroke-width="7"/>
+    <g stroke="#617087" stroke-width="1.5" fill="none">
+      <path d="M150 147V115 M750 147V115 M150 130H750 M150 125V135 M750 125V135"/>
+      <path d="M125 170H93 M125 770H93 M108 170V770 M103 170H113 M103 770H113"/>
+    </g>
+    <text x="450" y="123" text-anchor="middle" font-size="17">3,600 mm</text>
+    <text x="83" y="470" text-anchor="middle" font-size="17" transform="rotate(-90 83 470)">3,600 mm</text>
+    <g font-size="15" fill="#617087" text-anchor="middle">
+      <text x="150" y="800">0</text><text x="250" y="800">0.6</text><text x="350" y="800">1.2</text><text x="450" y="800">1.8</text><text x="550" y="800">2.4</text><text x="650" y="800">3.0</text><text x="750" y="800">3.6</text>
+    </g>
+    <g font-size="15" fill="#617087" text-anchor="start">
+      <text x="773" y="176">0</text><text x="773" y="276">0.6</text><text x="773" y="376">1.2</text><text x="773" y="476">1.8</text><text x="773" y="576">2.4</text><text x="773" y="676">3.0</text><text x="773" y="776">3.6</text>
+    </g>
+    <circle cx="150" cy="170" r="6" fill="#167dba"/>
+    <text x="164" y="197" fill="#167dba" font-size="15">원점 (0, 0)</text>
+    <text x="450" y="837" text-anchor="middle" font-size="17">x → 오른쪽 · y → 아래쪽 · 좌표 단위 m</text>
+    <text x="450" y="866" text-anchor="middle" font-size="15" fill="#617087">점선 한 칸 = 0.6 m · 면적 약 12.96 m² · 벽 두께는 표현용</text>
+  </g>
+</svg>

@@ -224,6 +224,8 @@ class MeasurementStore:
 
     def create_space(self, name, *, coordinate_unit='m', floorplan_path=None,
                      width=None, height=None):
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError('Space name is required')
         for value in (width, height):
             if value is not None and (not math.isfinite(value) or value <= 0):
                 raise ValueError('Space dimensions must be positive and finite')
@@ -232,10 +234,48 @@ class MeasurementStore:
                                              floorplan_path=floorplan_path, width=width, height=height))
 
     def create_location(self, space_id, name, *, x, y):
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError('Location name is required')
         if any(not math.isfinite(v) or v < 0 for v in (x, y)):
             raise ValueError('Coordinates must be nonnegative and finite')
+        space = self.connection.execute('SELECT * FROM space WHERE id = ?', (space_id,)).fetchone()
+        if space is None:
+            raise ValueError('Space does not exist')
+        if any(bound is not None and value > bound
+               for value, bound in ((x, space['width']), (y, space['height']))):
+            raise ValueError('Coordinates exceed space dimensions')
         with self.connection:
             return self._insert('location', dict(space_id=space_id, name=name, x=x, y=y))
+
+    def list_spaces(self):
+        return [dict(row) for row in self.connection.execute('SELECT * FROM space ORDER BY id')]
+
+    def list_locations(self, space_id):
+        return [dict(row) for row in self.connection.execute(
+            'SELECT * FROM location WHERE space_id = ? ORDER BY id', (space_id,))]
+
+    def get_location(self, location_id):
+        row = self.connection.execute('''SELECT l.*, s.name AS space_name, s.coordinate_unit
+            FROM location l JOIN space s ON s.id = l.space_id WHERE l.id = ?''',
+            (location_id,)).fetchone()
+        return dict(row) if row else None
+
+    def location_averages(self, space_id):
+        """Real samples only; failed metrics stay absent rather than becoming zero."""
+        return [dict(row) for row in self.connection.execute('''
+            SELECT l.id, l.name, l.x, l.y, COUNT(m.id) AS samples,
+              COUNT(CASE WHEN m.status IN ('ok','partial') THEN m.rssi_dbm END) AS rssi_samples,
+              AVG(CASE WHEN m.status IN ('ok','partial') THEN m.rssi_dbm END) AS rssi_dbm,
+              COUNT(CASE WHEN p.status IN ('ok','partial') THEN p.avg_ms END) AS ping_samples,
+              AVG(CASE WHEN p.status IN ('ok','partial') THEN p.avg_ms END) AS ping_avg_ms,
+              AVG(CASE WHEN p.status IN ('ok','partial','no_reply') THEN p.packet_loss_percent END)
+                AS packet_loss_percent
+            FROM location l
+            LEFT JOIN measurement m ON m.location_id = l.id
+              AND m.session_id IN (SELECT id FROM session WHERE data_kind = 'real')
+            LEFT JOIN ping_result p ON p.measurement_id = m.id AND p.target_kind = 'external'
+              AND m.status IN ('ok','partial')
+            WHERE l.space_id = ? GROUP BY l.id ORDER BY l.id''', (space_id,))]
 
     def save_measurement(self, session_id, result, *, sequence=None, location_id=None,
                          repeat_group_id=None):

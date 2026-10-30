@@ -21,8 +21,11 @@ class CollectorConfig:
     target: str = "1.1.1.1"
     count: int = 4
     interval: float = 5.0
+    location_id: int | None = None
 
     def __post_init__(self):
+        if self.location_id is not None and (type(self.location_id) is not int or self.location_id < 1):
+            raise ValueError('Location ID must be a positive integer')
         ipaddress.IPv4Address(self.target)
         if not isinstance(self.count, int) or not 1 <= self.count <= 20:
             raise ValueError("Ping 횟수는 1~20이어야 합니다.")
@@ -206,7 +209,14 @@ class WiFiCollector:
                             mode="monitor", config=asdict(self.config), data_kind=self.data_kind,
                             started_at=self.session_started_at,
                         )
-                    measurement_id = store.save_measurement(self.session_id, result)
+                    if self.config.location_id is not None:
+                        location = store.get_location(self.config.location_id)
+                        if location is None:
+                            raise ValueError('Selected location no longer exists')
+                        result['location'] = location
+                    measurement_id = store.save_measurement(
+                        self.session_id, result, location_id=self.config.location_id,
+                        repeat_group_id=self.session_id if self.config.location_id else None)
                     result["storage"] = {"status": "saved", "measurement_id": measurement_id,
                                          "session_id": self.session_id}
                 except Exception as exc:

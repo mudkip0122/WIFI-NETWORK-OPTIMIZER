@@ -20,6 +20,8 @@ class WifiMonitorApp:
         root.geometry("1000x960")
         root.minsize(950, 880)
         self.collector = None
+        self.selected_location = None
+        self.location_label = tk.StringVar(value='측정 위치: 미지정 (일반 모니터링)')
         self.closing = self.stopping = False
         self.last_quality = self.connection_key = None
         self.started_at = time.monotonic()
@@ -43,6 +45,11 @@ class WifiMonitorApp:
             entry.grid(row=1, column=col, padx=8)
             self.entries.append(entry)
         controls = ttk.Frame(root)
+        location_bar = ttk.Frame(root)
+        location_bar.pack(fill='x', padx=10)
+        ttk.Label(location_bar, textvariable=self.location_label).pack(side='left')
+        ttk.Button(location_bar, text='공간 / 지점 선택', command=self.show_locations).pack(side='right')
+        ttk.Button(location_bar, text='위치 해제', command=lambda: self.select_location(None)).pack(side='right')
         controls.pack()
         self.start_btn = ttk.Button(controls, text="자동 측정 시작", command=self.start)
         self.stop_btn = ttk.Button(controls, text="중지", command=self.stop, state="disabled")
@@ -77,7 +84,8 @@ class WifiMonitorApp:
             return
         try:
             config = CollectorConfig(self.interface.get().strip() or None, self.target.get().strip(),
-                                     4, float(self.interval.get()))
+                                     4, float(self.interval.get()),
+                                     self.selected_location['id'] if self.selected_location else None)
             if self.collector and (self.collector.config != config or self.collector.closing):
                 if not self.collector.close():
                     self.status.set("이전 세션 저장 마무리 중 · 잠시 후 다시 시작해 주세요.")
@@ -222,6 +230,23 @@ class WifiMonitorApp:
             return
         self.history_window = HistoryWindow(
             self.root, self.collector.db_path if self.collector else DEFAULT_DB_PATH)
+
+    def select_location(self, point):
+        if self.collector and self.collector.running:
+            messagebox.showinfo('측정 중', '중지를 누르고 측정 종료 후 위치를 변경해 주세요.')
+            return False
+        self.selected_location = point
+        self.location_label.set(
+            f"측정 위치: {point['space_name']} / {point['name']} · "
+            f"({point['x']}, {point['y']}) {point['coordinate_unit']}" if point else
+            '측정 위치: 미지정 (일반 모니터링)')
+        return True
+
+    def show_locations(self):
+        from wifi_optimizer.visualization.locations import LocationWindow
+        from wifi_optimizer.storage import DEFAULT_DB_PATH
+        LocationWindow(self.root, self.collector.db_path if self.collector else DEFAULT_DB_PATH,
+                       self.select_location)
 
     def save_text(self, text, extension):
         path = filedialog.asksaveasfilename(defaultextension=extension)
