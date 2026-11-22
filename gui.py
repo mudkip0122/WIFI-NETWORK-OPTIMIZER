@@ -49,6 +49,7 @@ class WifiMonitorApp:
         location_bar.pack(fill='x', padx=10)
         ttk.Label(location_bar, textvariable=self.location_label).pack(side='left')
         ttk.Button(location_bar, text='공간 / 지점 선택', command=self.show_locations).pack(side='right')
+        ttk.Button(location_bar, text='공간 분석', command=self.show_survey).pack(side='right', padx=5)
         ttk.Button(location_bar, text='위치 해제', command=lambda: self.select_location(None)).pack(side='right')
         controls.pack()
         self.start_btn = ttk.Button(controls, text="자동 측정 시작", command=self.start)
@@ -247,6 +248,18 @@ class WifiMonitorApp:
         from wifi_optimizer.storage import DEFAULT_DB_PATH
         LocationWindow(self.root, self.collector.db_path if self.collector else DEFAULT_DB_PATH,
                        self.select_location)
+
+    def show_survey(self):
+        from wifi_optimizer.storage import DEFAULT_DB_PATH
+        from wifi_optimizer.visualization.survey import SurveyWindow
+
+        existing = getattr(self, 'survey_window', None)
+        if existing is not None and existing.window.winfo_exists():
+            existing.window.lift()
+            return
+        space_id = self.selected_location['space_id'] if self.selected_location else None
+        self.survey_window = SurveyWindow(
+            self.root, self.collector.db_path if self.collector else DEFAULT_DB_PATH, space_id)
 
     def save_text(self, text, extension):
         path = filedialog.asksaveasfilename(defaultextension=extension)

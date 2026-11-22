@@ -4,10 +4,10 @@ Windows에서 Wi-Fi 측정 데이터를 수집·저장하고 공간별 품질과
 
 GitHub 저장소: [mudkip0122/WIFI-NETWORK-OPTIMIZER](https://github.com/mudkip0122/WIFI-NETWORK-OPTIMIZER)
 
-현재 단계: **8주차 품질 점수·등급 구현 및 자동 검증 완료**. 현재 연결된 무선 인터페이스의
+현재 단계는 **11월 계획(9~12주차) 공간 분석 구현 완료**입니다. 현재 연결된 무선 인터페이스의
 SSID·BSSID·신호 %·RSSI·채널·대역을 수집하며 기존 Visualizer에도 표시합니다.
 게이트웨이·외부 Ping, 패킷 손실, 수동 다운로드/업로드 측정을 지원합니다.
-주기적 자동 측정·시작/중지·실행 로그를 지원합니다. Heatmap은 이후 주차에 구현합니다.
+주기적 자동 측정·시작/중지·실행 로그를 지원합니다.
 5주차는 [SQLite 저장 구조 v1](docs/database-design.md)의 테이블 생성·저장 API와 Collector 자동 저장을 구현했습니다.
 GUI 자동 측정 및 `--monitor` 결과는 `data/wifi_optimizer.sqlite3`에 저장됩니다.
 저장 기록은 GUI의 **저장 기록 조회** 또는 CLI `--history`에서 확인합니다.
@@ -25,7 +25,12 @@ GUI 자동 측정 및 `--monitor` 결과는 `data/wifi_optimizer.sqlite3`에 저
 `quality` 평가가 포함됩니다. [8주차 진행 현황](docs/week08-status.md)에 기준과 한계를 기록했습니다.
 9주차 공간별 측정 기능을 구현했습니다. GUI에서 **중지 → 공간 / 지점 선택**으로 공간과 좌표를 등록하고,
 지점을 적용한 뒤 자동 측정을 시작합니다. 위치별 반복 기록과 RSSI·외부 Ping·손실 평균을 확인할 수 있습니다.
-사용 순서와 검증 범위는 [9주차 진행 현황](docs/week09-status.md)을 참고하세요. 다음 개발 작업은 10주차 Heatmap입니다.
+사용 순서와 검증 범위는 [9주차 진행 현황](docs/week09-status.md)을 참고하세요.
+
+10~12주차에는 **공간 분석**에서 공간과 AP를 선택하면 RSSI·외부 Ping·품질 점수 Heatmap을 볼 수 있습니다.
+음영 기준을 바꾸면 저품질 지점, 연속 영역과 면적 비율을 다시 표시합니다. 지점을 선택하면 측정값에 따라
+가능한 원인과 AP 배치·채널·대역 개선 방법을 확인할 수 있습니다.
+[11월 공간 분석 사용법과 검증 범위](docs/week10-12-status.md)
 
 GUI 실행: `.\.venv\Scripts\python.exe gui.py`
 
@@ -91,6 +96,9 @@ VS Code에서 이 폴더를 열고 Python 인터프리터로 `.venv\Scripts\pyth
 - [5주차 테이블 생성 및 저장 API](docs/week05-status.md)
 - [6주차 실시간 Wi-Fi Dashboard](docs/week06-status.md)
 - [7주차 실시간 그래프](docs/week07-status.md)
+- [8주차 품질 점수 및 등급](docs/week08-status.md)
+- [9주차 공간별 측정](docs/week09-status.md)
+- [10~12주차 Heatmap, 음영지역, 개선 추천](docs/week10-12-status.md)
 
 ## 폴더 구조
 
@@ -101,9 +109,9 @@ wifi_optimizer/
   measurement.py    한 번의 수동 품질 측정 통합
   collector.py      자동 측정 주기·시작/중지·로그·결과 큐
   storage/          SQLite 저장 및 조회 (5주차)
-  analysis/         품질 평가 및 규칙 진단 (8·11·12주차)
+  analysis/         품질 평가, 공간 보간 및 음영지역 탐지 (8·10·11주차)
   visualization/    Dashboard·그래프·Heatmap (6·7·10주차)
-  optimization/     AP 및 설정 개선 추천 (12주차)
+  optimization/     규칙 기반 진단과 AP 및 설정 개선 추천 (12주차)
 docs/               요구사항·설계·조사·진행 기록
 tests/              이후 구현 기능의 자동 검증
 data/               로컬 측정 데이터 (Git 제외)

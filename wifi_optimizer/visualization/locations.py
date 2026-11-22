@@ -65,8 +65,8 @@ class LocationWindow:
         self.canvas.delete('all')
         geometry = self.plan_geometry()
         if geometry is None:
-            self.canvas.create_text(230, 200, text='크기가 등록된 공간에서 평면도를 표시합니다.\n'
-                                    '위의 「내 방 3.6 × 3.6 m」를 누르세요.')
+            self.canvas.create_text(230, 200, text='크기가 등록된 m 단위 공간에서 평면도를 표시합니다.\n'
+                                    '크기를 모르거나 기존 공간이라면 지점 좌표를 직접 입력하세요.')
             return
         left, top, width, height, scale = geometry
         space = self.current_space()
@@ -105,13 +105,15 @@ class LocationWindow:
                 self.table.see(str(point['id']))
                 self.draw_plan()
                 return
-        x, y = round((event.x-left)/scale, 2), round((event.y-top)/scale, 2)
+        space = self.current_space()
+        x = min(space['width'], round((event.x - left) / scale, 2))
+        y = min(space['height'], round((event.y - top) / scale, 2))
         name = simpledialog.askstring('측정 지점 추가',
                                       f'좌표 ({x}, {y}) m · 지점 이름', parent=self.window)
         if name is None:
             return
         point_id = self.run(lambda store: store.create_location(
-            self.current_space()['id'], name.strip(), x=x, y=y))
+            space['id'], name.strip(), x=x, y=y))
         self.refresh()
         if point_id is not None:
             self.table.selection_set(str(point_id))
@@ -139,8 +141,21 @@ class LocationWindow:
         name = simpledialog.askstring('공간 추가', '공간 이름', parent=self.window)
         if name is None:
             return
-        self.run(lambda store: store.create_space(name.strip()))
-        self.reload_spaces()
+        dimensions = simpledialog.askstring('공간 크기', '가로 세로(m)를 입력하세요. 예시 4.5 3\n'
+                                            '크기를 모르면 빈칸으로 두세요.', parent=self.window)
+        if dimensions is None:
+            return
+        width = height = None
+        if dimensions.strip():
+            try:
+                width, height = map(float, dimensions.split())
+            except ValueError:
+                messagebox.showwarning('공간 크기 확인', '가로와 세로를 공백으로 구분해 입력하세요.',
+                                       parent=self.window)
+                return
+        space_id = self.run(lambda store: store.create_space(name.strip(), width=width, height=height))
+        if space_id is not None:
+            self.reload_spaces()
 
     def add_point(self):
         space = self.current_space()

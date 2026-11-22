@@ -277,6 +277,28 @@ class MeasurementStore:
               AND m.status IN ('ok','partial')
             WHERE l.space_id = ? GROUP BY l.id ORDER BY l.id''', (space_id,))]
 
+    def survey_access_points(self, space_id):
+        """List APs with usable real location measurements in this space."""
+        return [dict(row) for row in self.connection.execute('''
+            SELECT m.bssid, m.band, MAX(m.ssid) AS ssid, COUNT(*) AS samples
+            FROM location l JOIN measurement m ON m.location_id = l.id
+            JOIN session s ON s.id = m.session_id
+            WHERE l.space_id = ? AND s.data_kind = 'real'
+              AND m.status IN ('ok', 'partial') AND json_array_length(m.warnings_json) = 0
+            GROUP BY m.bssid, m.band ORDER BY samples DESC, m.bssid, m.band''', (space_id,))]
+
+    def survey_rows(self, space_id, bssid, band):
+        """Yield points and their eligible real measurements for one AP and band."""
+        for row in self.connection.execute('''
+            SELECT l.id, l.name, l.x, l.y, m.raw_result_json
+            FROM location l LEFT JOIN measurement m ON m.location_id = l.id
+              AND m.bssid IS ? AND m.band IS ? AND m.status IN ('ok', 'partial')
+              AND json_array_length(m.warnings_json) = 0
+              AND m.session_id IN (SELECT id FROM session WHERE data_kind = 'real')
+            WHERE l.space_id = ? ORDER BY l.id, m.id''', (bssid, band, space_id)):
+            yield row['id'], row['name'], row['x'], row['y'], (
+                json.loads(row['raw_result_json']) if row['raw_result_json'] is not None else None)
+
     def save_measurement(self, session_id, result, *, sequence=None, location_id=None,
                          repeat_group_id=None):
         """Save one result; identical retries return its ID, conflicting retries raise.
